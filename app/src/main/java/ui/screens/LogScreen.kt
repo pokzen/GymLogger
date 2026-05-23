@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import ca.bpmproperty.gymlogger.ui.components.AppCard
 import ca.bpmproperty.gymlogger.ui.components.LogOnDateSheet
-import ca.bpmproperty.gymlogger.ui.components.WorkoutCalendar
 import ca.bpmproperty.gymlogger.ui.components.WorkoutType
+import ca.bpmproperty.gymlogger.ui.components.WorkoutWeekStrip
 import ca.bpmproperty.gymlogger.ui.viewmodel.CalendarViewModel
 import ca.bpmproperty.gymlogger.ui.viewmodel.workoutViewModel
 import androidx.compose.material.icons.filled.Menu
@@ -100,33 +100,12 @@ fun LogScreen(
             onClick = { navController.navigate("stretching") }
         )
 
-        Spacer(modifier = Modifier.height(64.dp))
+        Spacer(modifier = Modifier.height(120.dp))
 
-        // ── Calendar heatmap ──
-        WorkoutCalendar(
+        // ── Current-week strip — tap to open the full scrollable calendar ──
+        WorkoutWeekStrip(
             workoutDates = calData.workoutDates,
-            onDayTap = { dateKey, hasWorkout ->
-                if (hasWorkout) {
-                    // Switch to the History bottom-tab and ask it to scroll to this day.
-                    navController.navigate("history") {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                    navController.getBackStackEntry("history")
-                        .savedStateHandle["scrollToDateKey"] = dateKey
-                } else {
-                    // Open the "log on this date" sheet
-                    sheetForDate = dateKey
-                }
-            },
-            onDayLongPress = { dateKey, hasWorkout ->
-                // Long-press only meaningful on empty past/today cells (future already filtered).
-                // Lets the user "quick-mark" the day as worked-out without going through logging.
-                if (!hasWorkout) {
-                    quickMarkConfirmDate = dateKey
-                }
-            },
+            onOpenCalendar = { navController.navigate("calendar_popout") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 10.dp)

@@ -63,6 +63,7 @@ import ca.bpmproperty.gymlogger.ui.screens.TemplateEditorScreen
 import ca.bpmproperty.gymlogger.ui.screens.TemplatePickerScreen
 import ca.bpmproperty.gymlogger.ui.screens.TimerPopoutScreen
 import ca.bpmproperty.gymlogger.ui.screens.TimerScreen
+import ca.bpmproperty.gymlogger.ui.screens.WorkoutCalendarPopout
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -337,6 +338,15 @@ fun MainApp() {
                     onPopOut = { target ->
                         navController.navigate("timer_popout?target=$target")
                     }
+                )
+            }
+
+            // Full-screen scrollable calendar popout, opened from the inline
+            // week strip on the Log screen.
+            composable("calendar_popout") {
+                WorkoutCalendarPopout(
+                    navController = navController,
+                    onBack = { navController.popBackStack() }
                 )
             }
 
