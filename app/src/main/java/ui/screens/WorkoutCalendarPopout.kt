@@ -198,6 +198,8 @@ fun WorkoutCalendarPopout(
 
             // The continuous grid.
             val gridLineColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+            // Faint white-ish accent at the bottom of every cell.
+            val cellBottomLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 items(weeks.size) { weekIndex ->
                     val week = weeks[weekIndex]
@@ -214,7 +216,9 @@ fun WorkoutCalendarPopout(
                                     .then(
                                         if (weekIndex > 0) Modifier.drawTopBorder(gridLineColor)
                                         else Modifier
-                                    ),
+                                    )
+                                    // Hairline white-ish accent along the bottom edge of every cell.
+                                    .drawBottomHairline(cellBottomLineColor),
                                 contentAlignment = Alignment.Center
                             ) {
                                 DayCell(
@@ -385,6 +389,18 @@ private fun Modifier.drawTopBorder(color: Color) = this.drawBehind {
         color = color,
         start = Offset(0f, 0f),
         end = Offset(size.width, 0f),
+        strokeWidth = px
+    )
+}
+
+/** Sub-pixel-thin hairline along the bottom edge of the cell. */
+private fun Modifier.drawBottomHairline(color: Color) = this.drawBehind {
+    val px = 0.5.dp.toPx()
+    val y = size.height - px / 2
+    drawLine(
+        color = color,
+        start = Offset(0f, y),
+        end = Offset(size.width, y),
         strokeWidth = px
     )
 }

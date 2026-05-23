@@ -46,12 +46,14 @@ fun LogScreen(
             .padding(horizontal = 20.dp)
             .padding(top = 8.dp, bottom = 24.dp)
     ) {
-        // Header row: hamburger menu on the left, "SHANE'S LOG" on the right
+        // Header row: hamburger menu on the left, "SHANE'S LOG" on the right.
+        // Bottom-align so the text's baseline sits flush with the bottom of the
+        // hamburger glyph.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(bottom = 24.dp),
+            verticalAlignment = Alignment.Bottom
         ) {
             IconButton(onClick = onOpenDrawer) {
                 Icon(
@@ -64,14 +66,15 @@ fun LogScreen(
             Text(
                 text = "SHANE'S LOG",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 4.dp, bottom = 12.dp)
             )
         }
         Text(
             text = "What's today?",
-            style = MaterialTheme.typography.headlineLarge,
+            style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 20.dp)
+            modifier = Modifier.padding(bottom = 36.dp)
         )
 
         // ── Workout type cards ──
@@ -100,7 +103,7 @@ fun LogScreen(
             onClick = { navController.navigate("stretching") }
         )
 
-        Spacer(modifier = Modifier.height(120.dp))
+        Spacer(modifier = Modifier.height(64.dp))
 
         // ── Current-week strip — tap to open the full scrollable calendar ──
         WorkoutWeekStrip(
@@ -114,8 +117,8 @@ fun LogScreen(
         // ── Streak strip ──
         StreakStrip(
             currentStreak = calData.currentStreak,
-            daysThisMonth = calData.daysThisMonth,
-            modifier = Modifier.padding(bottom = 8.dp)
+            daysInLast30 = calData.daysInLast30,
+            modifier = Modifier.padding(top = 28.dp, bottom = 8.dp)
         )
     }
 
@@ -168,14 +171,23 @@ fun LogScreen(
 @Composable
 private fun StreakStrip(
     currentStreak: Int,
-    daysThisMonth: Int,
+    daysInLast30: Int,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // Past-month line on top.
+        Text(
+            text = "Past Month: $daysInLast30 / 30 days (${"%.2f".format(daysInLast30 * 100.0 / 30.0)}%)",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        // Streak line below, with flame icon.
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Filled.LocalFireDepartment,
@@ -190,16 +202,6 @@ private fun StreakStrip(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
-        Text(
-            text = "·",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = "$daysThisMonth this month",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 

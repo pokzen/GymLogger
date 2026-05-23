@@ -1,6 +1,7 @@
 package ca.bpmproperty.gymlogger.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -87,25 +89,32 @@ private fun DayColumn(
         )
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Date number — wrapped in a circle background if today.
+        // Date number — today gets a thin underline beneath it, drawn in the
+        // same colour as the digit so it reads as a subtle accent rather than
+        // a coloured highlight.
+        val dateColor = MaterialTheme.colorScheme.onSurface
         Box(
             modifier = Modifier.size(36.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (isToday) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-            }
             Text(
                 text = dayOfMonth.toString(),
                 style = MaterialTheme.typography.titleMedium,
-                color = if (isToday) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold
+                color = dateColor,
+                fontWeight = FontWeight.SemiBold,
+                modifier = if (isToday) {
+                    Modifier.drawBehind {
+                        val strokePx = 1.dp.toPx()
+                        val y = size.height - strokePx / 2
+                        // Full cell width.
+                        drawLine(
+                            color = dateColor,
+                            start = androidx.compose.ui.geometry.Offset(0f, y),
+                            end = androidx.compose.ui.geometry.Offset(size.width, y),
+                            strokeWidth = strokePx
+                        )
+                    }
+                } else Modifier
             )
         }
 
