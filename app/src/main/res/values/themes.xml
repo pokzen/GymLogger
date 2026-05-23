@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.GymLogger" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+        Native Android theme used by the activity *before* Compose takes over and
+        again briefly during the boot/splash window. Compose draws the real UI
+        afterwards, but if this theme is light the user sees a white flash on
+        cold start. Anchor it to black so the launch frame matches the app.
+    -->
+    <style name="Theme.GymLogger" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:colorBackground">@color/black</item>
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

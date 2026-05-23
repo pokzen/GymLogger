@@ -160,9 +160,16 @@ class TimerForegroundService : Service() {
                 @Suppress("DEPRECATION")
                 getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
             }
-            vibrator?.vibrate(
-                VibrationEffect.createWaveform(longArrayOf(0, 300, 150, 300, 150, 300), -1)
-            )
+            // VibrationEffect / createWaveform are API 26+. minSdk is 24, so fall back
+            // to the deprecated long-pattern overload on API 24-25.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(
+                    VibrationEffect.createWaveform(longArrayOf(0, 300, 150, 300, 150, 300), -1)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(longArrayOf(0, 300, 150, 300, 150, 300), -1)
+            }
         } catch (_: Throwable) {}
 
         // Visual notification — named after the specific countdown.

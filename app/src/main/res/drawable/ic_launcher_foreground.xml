@@ -5,8 +5,9 @@
   All elements stay within the inner 66x66dp safe zone (x: 21..87, y: 21..87)
   so the launcher won't crop any of the design when it masks corners.
 
-  Design: a horizontal bar with two stacked weight plates on each end —
-  classic barbell silhouette, instantly readable as a fitness/lifting app.
+  Variant: rounded plates — same proportions as the original sharp version,
+  but each plate and the grip carry a small corner radius for a softer read
+  at small launcher sizes.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -14,28 +15,28 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Center bar (horizontal grip) -->
+    <!-- Center bar (horizontal grip) — slight rounding on the ends -->
     <path
         android:fillColor="#D4FF3F"
-        android:pathData="M32,52 L76,52 L76,56 L32,56 Z" />
+        android:pathData="M33,52 L75,52 A1,1 0 0 1 76,53 L76,55 A1,1 0 0 1 75,56 L33,56 A1,1 0 0 1 32,55 L32,53 A1,1 0 0 1 33,52 Z" />
 
-    <!-- Left outer plate (larger) -->
+    <!-- Left outer plate (larger) — 2px rounded corners -->
     <path
         android:fillColor="#D4FF3F"
-        android:pathData="M23,38 L31,38 L31,70 L23,70 Z" />
+        android:pathData="M25,38 L29,38 A2,2 0 0 1 31,40 L31,68 A2,2 0 0 1 29,70 L25,70 A2,2 0 0 1 23,68 L23,40 A2,2 0 0 1 25,38 Z" />
 
-    <!-- Left inner plate (smaller) -->
+    <!-- Left inner plate (smaller) — 1.5px rounded corners -->
     <path
         android:fillColor="#D4FF3F"
-        android:pathData="M32,43 L37,43 L37,65 L32,65 Z" />
+        android:pathData="M33.5,43 L35.5,43 A1.5,1.5 0 0 1 37,44.5 L37,63.5 A1.5,1.5 0 0 1 35.5,65 L33.5,65 A1.5,1.5 0 0 1 32,63.5 L32,44.5 A1.5,1.5 0 0 1 33.5,43 Z" />
 
-    <!-- Right inner plate (smaller) -->
+    <!-- Right inner plate (smaller) — 1.5px rounded corners -->
     <path
         android:fillColor="#D4FF3F"
-        android:pathData="M71,43 L76,43 L76,65 L71,65 Z" />
+        android:pathData="M72.5,43 L74.5,43 A1.5,1.5 0 0 1 76,44.5 L76,63.5 A1.5,1.5 0 0 1 74.5,65 L72.5,65 A1.5,1.5 0 0 1 71,63.5 L71,44.5 A1.5,1.5 0 0 1 72.5,43 Z" />
 
-    <!-- Right outer plate (larger) -->
+    <!-- Right outer plate (larger) — 2px rounded corners -->
     <path
         android:fillColor="#D4FF3F"
-        android:pathData="M77,38 L85,38 L85,70 L77,70 Z" />
+        android:pathData="M79,38 L83,38 A2,2 0 0 1 85,40 L85,68 A2,2 0 0 1 83,70 L79,70 A2,2 0 0 1 77,68 L77,40 A2,2 0 0 1 79,38 Z" />
 </vector>
