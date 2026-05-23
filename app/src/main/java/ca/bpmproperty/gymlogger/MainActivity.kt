@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,8 @@ import ca.bpmproperty.gymlogger.ui.screens.SettingsScreen
 import ca.bpmproperty.gymlogger.ui.screens.StretchLibraryScreen
 import ca.bpmproperty.gymlogger.ui.screens.TemplateEditorScreen
 import ca.bpmproperty.gymlogger.ui.screens.TemplatePickerScreen
+import ca.bpmproperty.gymlogger.ui.screens.TimerPopoutScreen
+import ca.bpmproperty.gymlogger.ui.screens.TimerScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,6 +86,7 @@ fun MainApp() {
         BottomNavItem("log", "Log", Icons.Filled.FitnessCenter),
         BottomNavItem("history", "History", Icons.Filled.History),
         BottomNavItem("summary", "Summary", Icons.Filled.BarChart),
+        BottomNavItem("timer", "Timer", Icons.Filled.Timer),
     )
 
     val openDrawer: () -> Unit = {
@@ -100,8 +104,8 @@ fun MainApp() {
             AppDrawerContent(
                 onNavigate = { route ->
                     closeDrawer()
-                    // Tab routes (log/history/summary) switch tabs; everything else pushes.
-                    if (route in setOf("log", "history", "summary")) {
+                    // Tab routes (log/history/summary/timer) switch tabs; everything else pushes.
+                    if (route in setOf("log", "history", "summary", "timer")) {
                         navController.navigate(route) {
                             popUpTo(navController.graph.startDestinationId) { saveState = true }
                             launchSingleTop = true
@@ -116,15 +120,19 @@ fun MainApp() {
             )
         }
     ) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
+        // Hide the bottom nav on the full-screen timer popout so it actually feels full-screen.
+        val showBottomBar = currentRoute?.startsWith("timer_popout") != true
+
         Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
+            if (showBottomBar) {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.background,
                 tonalElevation = 0.dp
             ) {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
                 items.forEach { item ->
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.label) },
@@ -151,6 +159,7 @@ fun MainApp() {
                         )
                     )
                 }
+            }
             }
         }
     ) { innerPadding ->
@@ -317,6 +326,34 @@ fun MainApp() {
             composable("about") {
                 AboutScreen(onBack = { navController.popBackStack() })
             }
+
+            // Timer (stopwatch + countdowns) — reachable both as a bottom-nav tab
+            // and from the drawer. As a tab there's no back stack, so the back
+            // button is suppressed.
+            composable("timer") {
+                TimerScreen(
+                    onBack = { navController.popBackStack() },
+                    showBackButton = false,
+                    onPopOut = { target ->
+                        navController.navigate("timer_popout?target=$target")
+                    }
+                )
+            }
+
+            // Full-screen single-timer popout. Free orientation.
+            composable(
+                route = "timer_popout?target={target}",
+                arguments = listOf(navArgument("target") {
+                    type = NavType.StringType
+                    defaultValue = "stopwatch"
+                })
+            ) { backStackEntry ->
+                val target = backStackEntry.arguments?.getString("target") ?: "stopwatch"
+                TimerPopoutScreen(
+                    target = target,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
     }
@@ -353,6 +390,11 @@ private fun AppDrawerContent(
                 label = "Workout Templates",
                 icon = Icons.Filled.LibraryBooks,
                 onClick = { onNavigate("weights_picker") }
+            )
+            DrawerItem(
+                label = "Timer",
+                icon = Icons.Filled.Timer,
+                onClick = { onNavigate("timer") }
             )
 
             Spacer(modifier = Modifier.height(8.dp))

@@ -46,10 +46,17 @@ data class WorkoutDay(
     val dateKey: Int,
     val lifting: List<LiftingEntry>,
     val cardio: List<CardioEntry>,
-    val stretching: List<StretchingEntry>
+    val stretching: List<StretchingEntry>,
+    /** True if this day was quick-logged (long-pressed on calendar). May coexist with sessions. */
+    val quickLogged: Boolean = false
 ) {
+    /** "Empty" means no real sessions logged. A day can be marked-only and still empty here. */
     val isEmpty: Boolean
         get() = lifting.isEmpty() && cardio.isEmpty() && stretching.isEmpty()
+
+    /** True only when the day has nothing at all — no sessions and no quick-mark. */
+    val isFullyEmpty: Boolean
+        get() = isEmpty && !quickLogged
 
     val totalSessions: Int
         get() = lifting.size + cardio.size + stretching.size
@@ -87,6 +94,13 @@ class HistoryViewModel(
         }
     }
 
+    /** Remove a quick-log marker for a given day. */
+    fun deleteQuickLog(dateKey: Int) {
+        viewModelScope.launch {
+            repository.deleteQuickLog(dateKey)
+        }
+    }
+
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
@@ -96,13 +110,16 @@ class HistoryViewModel(
     val days: StateFlow<List<WorkoutDay>> = combine(
         repository.getAllLifting(),
         repository.getAllCardio(),
-        repository.getAllStretching()
-    ) { lifting, cardio, stretching ->
-        // Collect every dateKey that has at least one session
+        repository.getAllStretching(),
+        repository.getAllQuickLogs()
+    ) { lifting, cardio, stretching, quickLogs ->
+        // Collect every dateKey that has at least one session OR a quick-log marker
+        val quickLogKeys = quickLogs.map { it.dateKey }.toSet()
         val keys = buildSet<Int> {
             lifting.forEach { add(it.dateKey) }
             cardio.forEach { add(it.dateKey) }
             stretching.forEach { add(it.dateKey) }
+            addAll(quickLogKeys)
             // Always include today so the screen can render a TODAY card
             add(todayDateKey())
         }
@@ -113,7 +130,8 @@ class HistoryViewModel(
                 dateKey = dateKey,
                 lifting = lifting.filter { it.dateKey == dateKey }.map { it.toEntry(json) },
                 cardio = cardio.filter { it.dateKey == dateKey }.map { it.toEntry(json) },
-                stretching = stretching.filter { it.dateKey == dateKey }.map { it.toEntry(json) }
+                stretching = stretching.filter { it.dateKey == dateKey }.map { it.toEntry(json) },
+                quickLogged = dateKey in quickLogKeys
             )
         }
     }.stateIn(

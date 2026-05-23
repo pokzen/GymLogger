@@ -2,6 +2,7 @@ package ca.bpmproperty.gymlogger.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ca.bpmproperty.gymlogger.data.QuickLog
 import ca.bpmproperty.gymlogger.data.WorkoutRepository
 import ca.bpmproperty.gymlogger.data.dateKeyMinusDays
 import ca.bpmproperty.gymlogger.data.monthKey
@@ -10,11 +11,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * Aggregated workout-calendar data for the heatmap on the Log screen.
  *
- * - workoutDates: every dateKey with at least one session of any type
+ * - workoutDates: every dateKey with at least one session of any type OR a quick-log marker
  * - currentStreak: number of consecutive days up to & including today with at least one workout
  *                  (0 if today has nothing logged)
  * - daysThisMonth: count of distinct workout days in the current calendar month
@@ -26,18 +28,20 @@ data class CalendarData(
 )
 
 class CalendarViewModel(
-    repository: WorkoutRepository
+    private val repository: WorkoutRepository
 ) : ViewModel() {
 
     val data: StateFlow<CalendarData> = combine(
         repository.getAllLifting(),
         repository.getAllCardio(),
-        repository.getAllStretching()
-    ) { lifting, cardio, stretching ->
+        repository.getAllStretching(),
+        repository.getAllQuickLogs()
+    ) { lifting, cardio, stretching, quickLogs ->
         val dates = buildSet<Int> {
             lifting.forEach { add(it.dateKey) }
             cardio.forEach { add(it.dateKey) }
             stretching.forEach { add(it.dateKey) }
+            quickLogs.forEach { add(it.dateKey) }
         }
         CalendarData(
             workoutDates = dates,
@@ -49,6 +53,21 @@ class CalendarViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = CalendarData()
     )
+
+    /** Mark a past or today's day as worked-out, no details. Future dates are rejected. */
+    fun markDayQuick(dateKey: Int) {
+        if (dateKey > todayDateKey()) return
+        viewModelScope.launch {
+            repository.upsertQuickLog(QuickLog(dateKey = dateKey))
+        }
+    }
+
+    /** Remove a quick-log marker for the given day. */
+    fun unmarkDayQuick(dateKey: Int) {
+        viewModelScope.launch {
+            repository.deleteQuickLog(dateKey)
+        }
+    }
 }
 
 /** Walk backwards from today; stop on the first day with no workout. */

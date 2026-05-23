@@ -50,6 +50,12 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     suspend fun upsertDraft(draft: SessionDraft) = db.sessionDraftDao().upsert(draft)
     suspend fun deleteDraft(type: String) = db.sessionDraftDao().delete(type)
 
+    // Quick Logs — "I worked out on this day, no details"
+    fun getAllQuickLogs(): Flow<List<QuickLog>> = db.quickLogDao().getAll()
+    suspend fun getQuickLog(dateKey: Int): QuickLog? = db.quickLogDao().getByDateKey(dateKey)
+    suspend fun upsertQuickLog(quickLog: QuickLog) = db.quickLogDao().upsert(quickLog)
+    suspend fun deleteQuickLog(dateKey: Int) = db.quickLogDao().deleteByDateKey(dateKey)
+
     /**
      * Insert a stretch into the library if a matching name doesn't already exist.
      * Case-insensitive match. Returns true if inserted, false if a duplicate was found.

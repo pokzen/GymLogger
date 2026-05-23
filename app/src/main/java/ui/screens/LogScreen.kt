@@ -37,6 +37,7 @@ fun LogScreen(
     val calData by calendarVM.data.collectAsState()
 
     var sheetForDate by remember { mutableStateOf<Int?>(null) }
+    var quickMarkConfirmDate by remember { mutableStateOf<Int?>(null) }
 
     Column(
         modifier = Modifier
@@ -119,6 +120,13 @@ fun LogScreen(
                     sheetForDate = dateKey
                 }
             },
+            onDayLongPress = { dateKey, hasWorkout ->
+                // Long-press only meaningful on empty past/today cells (future already filtered).
+                // Lets the user "quick-mark" the day as worked-out without going through logging.
+                if (!hasWorkout) {
+                    quickMarkConfirmDate = dateKey
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 10.dp)
@@ -146,6 +154,34 @@ fun LogScreen(
                 navController.navigate(route)
             },
             onDismiss = { sheetForDate = null }
+        )
+    }
+
+    // Quick-mark confirmation (triggered by long-pressing an empty past/today day)
+    quickMarkConfirmDate?.let { dateKey ->
+        AlertDialog(
+            onDismissRequest = { quickMarkConfirmDate = null },
+            title = { Text("Mark as worked out?") },
+            text = {
+                Text(
+                    "This will flag ${ca.bpmproperty.gymlogger.data.dayLabel(dateKey)} on the calendar without logging any details. " +
+                        "You can remove the mark later from History."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    calendarVM.markDayQuick(dateKey)
+                    quickMarkConfirmDate = null
+                }) {
+                    Text("MARK", color = MaterialTheme.colorScheme.primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { quickMarkConfirmDate = null }) {
+                    Text("CANCEL", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }

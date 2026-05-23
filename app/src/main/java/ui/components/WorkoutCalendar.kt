@@ -1,8 +1,10 @@
 package ca.bpmproperty.gymlogger.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,6 +40,7 @@ import ca.bpmproperty.gymlogger.data.todayDateKey
 fun WorkoutCalendar(
     workoutDates: Set<Int>,
     onDayTap: (dateKey: Int, hasWorkout: Boolean) -> Unit,
+    onDayLongPress: (dateKey: Int, hasWorkout: Boolean) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     weeksBack: Int = 12
 ) {
@@ -102,7 +105,8 @@ fun WorkoutCalendar(
                             hasWorkout = dateKey in workoutDates,
                             isToday = isToday(dateKey),
                             isFuture = dateKey > today,
-                            onTap = { hasWorkout -> onDayTap(dateKey, hasWorkout) }
+                            onTap = { hasWorkout -> onDayTap(dateKey, hasWorkout) },
+                            onLongPress = { hasWorkout -> onDayLongPress(dateKey, hasWorkout) }
                         )
                     }
                 }
@@ -125,13 +129,15 @@ private fun DayLabel(letter: String) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DayCell(
     dateKey: Int,
     hasWorkout: Boolean,
     isToday: Boolean,
     isFuture: Boolean,
-    onTap: (hasWorkout: Boolean) -> Unit
+    onTap: (hasWorkout: Boolean) -> Unit,
+    onLongPress: (hasWorkout: Boolean) -> Unit
 ) {
     val shape = RoundedCornerShape(3.dp)
     val baseColor = when {
@@ -152,7 +158,10 @@ private fun DayCell(
         )
         .then(
             if (!isFuture)
-                Modifier.clickable { onTap(hasWorkout) }
+                Modifier.combinedClickable(
+                    onClick = { onTap(hasWorkout) },
+                    onLongClick = { onLongPress(hasWorkout) }
+                )
             else
                 Modifier
         )

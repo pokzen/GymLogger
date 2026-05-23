@@ -45,6 +45,19 @@ data class StretchingSession(
 )
 
 /**
+ * A "quick-logged" workout day — created by long-pressing an empty day on the calendar.
+ * Used when the user wants to flag that they worked out on a given day without
+ * recording any details. Lives alongside the detailed session tables; the calendar
+ * and history screens union all four.
+ */
+@Entity(tableName = "quick_logs")
+data class QuickLog(
+    @PrimaryKey val dateKey: Int,
+    val createdAt: Long = System.currentTimeMillis(),
+    val note: String = ""
+)
+
+/**
  * In-progress session state, persisted so a workout survives the app being backgrounded
  * or killed. One draft per session type; new sessions of the same type replace the
  * previous draft. Drafts are cleared when the user taps Finish (real session is saved).
@@ -157,6 +170,24 @@ interface StretchingDao {
 }
 
 @Dao
+interface QuickLogDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(quickLog: QuickLog)
+
+    @Delete
+    suspend fun delete(quickLog: QuickLog)
+
+    @Query("DELETE FROM quick_logs WHERE dateKey = :dateKey")
+    suspend fun deleteByDateKey(dateKey: Int)
+
+    @Query("SELECT * FROM quick_logs ORDER BY dateKey DESC")
+    fun getAll(): Flow<List<QuickLog>>
+
+    @Query("SELECT * FROM quick_logs WHERE dateKey = :dateKey LIMIT 1")
+    suspend fun getByDateKey(dateKey: Int): QuickLog?
+}
+
+@Dao
 interface SessionDraftDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(draft: SessionDraft)
@@ -241,9 +272,10 @@ interface WorkoutTemplateDao {
         WorkoutTemplate::class,
         LibraryExercise::class,
         LibraryStretch::class,
-        SessionDraft::class
+        SessionDraft::class,
+        QuickLog::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class WorkoutDatabase : RoomDatabase() {
@@ -254,6 +286,7 @@ abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun libraryExerciseDao(): LibraryExerciseDao
     abstract fun libraryStretchDao(): LibraryStretchDao
     abstract fun sessionDraftDao(): SessionDraftDao
+    abstract fun quickLogDao(): QuickLogDao
 
     companion object {
         @Volatile

@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Edit
@@ -52,9 +53,10 @@ fun HistoryScreen(
     var deleteLiftingId by remember { mutableStateOf<Int?>(null) }
     var deleteCardioId by remember { mutableStateOf<Int?>(null) }
     var deleteStretchingId by remember { mutableStateOf<Int?>(null) }
+    var deleteQuickLogDateKey by remember { mutableStateOf<Int?>(null) }
 
-    // Has the user logged anything ever?
-    val hasAnyData = days.any { !it.isEmpty }
+    // Has the user logged anything ever? (Either sessions or quick-marks.)
+    val hasAnyData = days.any { !it.isFullyEmpty }
 
     val listState = rememberLazyListState()
 
@@ -122,7 +124,8 @@ fun HistoryScreen(
                     onEditStretching = onEditStretching,
                     onDeleteLifting = { deleteLiftingId = it },
                     onDeleteCardio = { deleteCardioId = it },
-                    onDeleteStretching = { deleteStretchingId = it }
+                    onDeleteStretching = { deleteStretchingId = it },
+                    onDeleteQuickLog = { deleteQuickLogDateKey = it }
                 )
             }
 
@@ -175,6 +178,17 @@ fun HistoryScreen(
             onDismiss = { deleteStretchingId = null }
         )
     }
+
+    deleteQuickLogDateKey?.let { dateKey ->
+        DeleteSessionDialog(
+            sessionLabel = "quick-log marker",
+            onConfirm = {
+                viewModel.deleteQuickLog(dateKey)
+                deleteQuickLogDateKey = null
+            },
+            onDismiss = { deleteQuickLogDateKey = null }
+        )
+    }
 }
 
 @Composable
@@ -210,7 +224,8 @@ private fun DayCard(
     onEditStretching: (Int) -> Unit = {},
     onDeleteLifting: (Int) -> Unit = {},
     onDeleteCardio: (Int) -> Unit = {},
-    onDeleteStretching: (Int) -> Unit = {}
+    onDeleteStretching: (Int) -> Unit = {},
+    onDeleteQuickLog: (Int) -> Unit = {}
 ) {
     val borderColor by animateColorAsState(
         targetValue = if (isHighlighted) MaterialTheme.colorScheme.primary else Color.Transparent,
@@ -254,15 +269,49 @@ private fun DayCard(
                     if (day.hasLifting) TypeBadge(Icons.Filled.FitnessCenter)
                     if (day.hasCardio) TypeBadge(Icons.Filled.DirectionsRun)
                     if (day.hasStretching) TypeBadge(Icons.Filled.SelfImprovement)
+                    if (day.quickLogged) TypeBadge(Icons.Filled.Bolt)
                 }
             }
 
-            // Empty state for TODAY card
-            if (day.isEmpty) {
+            // Empty state — only when the day has NOTHING (no sessions, no quick-mark)
+            if (day.isFullyEmpty) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = "Nothing logged yet.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                return@Column
+            }
+
+            // Quick-logged section (shown for days marked via long-press, no real sessions)
+            if (day.quickLogged && day.isEmpty) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "QUICK-LOGGED",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    IconButton(
+                        onClick = { onDeleteQuickLog(day.dateKey) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Remove mark",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = "Day marked as worked out (no details).",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 return@Column

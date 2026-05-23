@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Used by the timer foreground service to keep the timer ticking with a notification
+         when the app is backgrounded or the screen is off. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Notification permission required on Android 13+ to show the timer notification. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- For the buzz when a countdown finishes. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:name=".data.GymLoggerApplication"
         android:allowBackup="true"
@@ -16,6 +25,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.GymLogger">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,6 +44,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Foreground service that keeps the workout timer ticking with a persistent
+             notification, even when the app is backgrounded or the screen is off. -->
+        <service
+            android:name=".data.TimerForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Workout timer that continues counting in the background" />
+        </service>
     </application>
 
 </manifest>
