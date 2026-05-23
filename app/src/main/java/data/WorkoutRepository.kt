@@ -39,6 +39,25 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     suspend fun updateLibraryExercise(exercise: LibraryExercise) = db.libraryExerciseDao().update(exercise)
     suspend fun deleteLibraryExercise(exercise: LibraryExercise) = db.libraryExerciseDao().delete(exercise)
 
+    // Stretch Library
+    fun getAllLibraryStretches(): Flow<List<LibraryStretch>> = db.libraryStretchDao().getAll()
+    suspend fun getLibraryStretch(id: Int): LibraryStretch? = db.libraryStretchDao().getById(id)
+    suspend fun updateLibraryStretch(stretch: LibraryStretch) = db.libraryStretchDao().update(stretch)
+    suspend fun deleteLibraryStretch(stretch: LibraryStretch) = db.libraryStretchDao().delete(stretch)
+
+    /**
+     * Insert a stretch into the library if a matching name doesn't already exist.
+     * Case-insensitive match. Returns true if inserted, false if a duplicate was found.
+     */
+    suspend fun saveLibraryStretchIfNew(name: String): Boolean {
+        val trimmed = name.trim()
+        if (trimmed.isBlank()) return false
+        val existing = db.libraryStretchDao().findByName(trimmed)
+        if (existing != null) return false
+        db.libraryStretchDao().insert(LibraryStretch(name = trimmed))
+        return true
+    }
+
     /** Idempotent. Populates the library with default exercises if it's currently empty. */
     suspend fun seedLibraryIfEmpty() {
         val dao = db.libraryExerciseDao()

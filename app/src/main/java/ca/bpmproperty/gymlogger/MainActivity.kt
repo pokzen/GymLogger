@@ -5,25 +5,42 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,7 +54,10 @@ import ca.bpmproperty.gymlogger.ui.screens.SummaryScreen
 import ca.bpmproperty.gymlogger.ui.screens.LiftingScreen
 import ca.bpmproperty.gymlogger.ui.screens.CardioScreen
 import ca.bpmproperty.gymlogger.ui.screens.StretchingScreen
+import ca.bpmproperty.gymlogger.ui.screens.AboutScreen
 import ca.bpmproperty.gymlogger.ui.screens.ExerciseLibraryScreen
+import ca.bpmproperty.gymlogger.ui.screens.SettingsScreen
+import ca.bpmproperty.gymlogger.ui.screens.StretchLibraryScreen
 import ca.bpmproperty.gymlogger.ui.screens.TemplateEditorScreen
 import ca.bpmproperty.gymlogger.ui.screens.TemplatePickerScreen
 
@@ -56,6 +76,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     val items = listOf(
         BottomNavItem("log", "Log", Icons.Filled.FitnessCenter),
@@ -63,7 +85,38 @@ fun MainApp() {
         BottomNavItem("summary", "Summary", Icons.Filled.BarChart),
     )
 
-    Scaffold(
+    val openDrawer: () -> Unit = {
+        scope.launch { drawerState.open() }
+        Unit
+    }
+    val closeDrawer: () -> Unit = {
+        scope.launch { drawerState.close() }
+        Unit
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(
+                onNavigate = { route ->
+                    closeDrawer()
+                    // Tab routes (log/history/summary) switch tabs; everything else pushes.
+                    if (route in setOf("log", "history", "summary")) {
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    } else {
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            )
+        }
+    ) {
+        Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar(
@@ -109,7 +162,7 @@ fun MainApp() {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            composable("log") { LogScreen(navController) }
+            composable("log") { LogScreen(navController, onOpenDrawer = openDrawer) }
             composable("history") { backStackEntry ->
                 // Read scroll target from saved state (set by LogScreen when a calendar day is tapped).
                 // Using SavedStateHandle here lets us pass data when switching to an existing tab
@@ -117,6 +170,7 @@ fun MainApp() {
                 val scrollTo = backStackEntry.savedStateHandle.get<Int>("scrollToDateKey")
                 HistoryScreen(
                     scrollToDateKey = scrollTo,
+                    onOpenDrawer = openDrawer,
                     onEditLifting = { id -> navController.navigate("lifting?edit=$id") },
                     onEditCardio = { id -> navController.navigate("cardio?edit=$id") },
                     onEditStretching = { id -> navController.navigate("stretching?edit=$id") }
@@ -128,7 +182,7 @@ fun MainApp() {
                     }
                 }
             }
-            composable("summary") { SummaryScreen() }
+            composable("summary") { SummaryScreen(onOpenDrawer = openDrawer) }
             composable(
                 route = "lifting?date={date}&template={template}&edit={edit}",
                 arguments = listOf(
@@ -242,11 +296,125 @@ fun MainApp() {
                 StretchingScreen(
                     onBack = { navController.popBackStack() },
                     initialDateKey = if (date > 0) date else null,
-                    editingSessionId = if (edit > 0) edit else null
+                    editingSessionId = if (edit > 0) edit else null,
+                    onManageLibrary = { navController.navigate("stretch_library") }
                 )
+            }
+
+            // Stretch library management screen
+            composable("stretch_library") {
+                StretchLibraryScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            // Settings (placeholder for future units/theme/etc.)
+            composable("settings") {
+                SettingsScreen(onBack = { navController.popBackStack() })
+            }
+
+            // About / version info
+            composable("about") {
+                AboutScreen(onBack = { navController.popBackStack() })
             }
         }
     }
+    }
+}
+
+@Composable
+private fun AppDrawerContent(
+    onNavigate: (route: String) -> Unit
+) {
+    ModalDrawerSheet(
+        drawerContainerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "SHANE'S LOG",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 12.dp, bottom = 20.dp, top = 8.dp)
+            )
+
+            // ── Workout ──
+            DrawerSectionLabel("Workout")
+            DrawerItem(
+                label = "Exercise Library",
+                icon = Icons.Filled.FitnessCenter,
+                onClick = { onNavigate("exercise_library") }
+            )
+            DrawerItem(
+                label = "Stretch Library",
+                icon = Icons.Filled.SelfImprovement,
+                onClick = { onNavigate("stretch_library") }
+            )
+            DrawerItem(
+                label = "Workout Templates",
+                icon = Icons.Filled.LibraryBooks,
+                onClick = { onNavigate("weights_picker") }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ── Data ──
+            DrawerSectionLabel("Data")
+            DrawerItem(
+                label = "Export & Backup",
+                icon = Icons.Filled.Share,
+                onClick = { onNavigate("summary") } // jumps to Summary where export lives
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ── App ──
+            DrawerSectionLabel("App")
+            DrawerItem(
+                label = "Settings",
+                icon = Icons.Filled.Settings,
+                onClick = { onNavigate("settings") }
+            )
+            DrawerItem(
+                label = "About",
+                icon = Icons.Filled.Info,
+                onClick = { onNavigate("about") }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DrawerSectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 6.dp)
+    )
+}
+
+@Composable
+private fun DrawerItem(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    NavigationDrawerItem(
+        icon = { Icon(icon, contentDescription = null, modifier = Modifier.padding(start = 4.dp)) },
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        },
+        selected = false,
+        onClick = onClick,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = MaterialTheme.colorScheme.surface,
+            unselectedIconColor = MaterialTheme.colorScheme.primary,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurface
+        )
+    )
 }
 
 data class BottomNavItem(

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,6 +40,7 @@ import ca.bpmproperty.gymlogger.ui.viewmodel.workoutViewModel
 @Composable
 fun HistoryScreen(
     scrollToDateKey: Int? = null,
+    onOpenDrawer: () -> Unit = {},
     onEditLifting: (Int) -> Unit = {},
     onEditCardio: (Int) -> Unit = {},
     onEditStretching: (Int) -> Unit = {}
@@ -76,14 +78,29 @@ fun HistoryScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp)
-            .padding(top = 24.dp)
+            .padding(top = 8.dp)
     ) {
-        Text(
-            text = "HISTORY",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
+        // Header row: hamburger menu on the left, "HISTORY" eyebrow on the right
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onOpenDrawer) {
+                Icon(
+                    imageVector = Icons.Filled.Menu,
+                    contentDescription = "Menu",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = "HISTORY",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Text(
             text = "By the day",
             style = MaterialTheme.typography.headlineLarge,

@@ -25,9 +25,14 @@ import ca.bpmproperty.gymlogger.ui.components.WorkoutCalendar
 import ca.bpmproperty.gymlogger.ui.components.WorkoutType
 import ca.bpmproperty.gymlogger.ui.viewmodel.CalendarViewModel
 import ca.bpmproperty.gymlogger.ui.viewmodel.workoutViewModel
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.IconButton
 
 @Composable
-fun LogScreen(navController: NavController) {
+fun LogScreen(
+    navController: NavController,
+    onOpenDrawer: () -> Unit = {}
+) {
     val calendarVM: CalendarViewModel = workoutViewModel { CalendarViewModel(it) }
     val calData by calendarVM.data.collectAsState()
 
@@ -38,16 +43,29 @@ fun LogScreen(navController: NavController) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
-            .padding(top = 24.dp, bottom = 24.dp)
+            .padding(top = 8.dp, bottom = 24.dp)
     ) {
-        Text(
-            text = "SHANE'S LOG",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
+        // Header row: hamburger menu on the left, "SHANE'S LOG" on the right
+        Row(
             modifier = Modifier
-                .align(Alignment.End)
-                .padding(bottom = 12.dp)
-        )
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onOpenDrawer) {
+                Icon(
+                    imageVector = Icons.Filled.Menu,
+                    contentDescription = "Menu",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = "SHANE'S LOG",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         Text(
             text = "What's today?",
             style = MaterialTheme.typography.headlineLarge,

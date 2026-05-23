@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Exposes cacheDir/exports/ to the FileProvider so other apps (Gmail, Drive, etc.)
+         can read export files when shared via Intent.ACTION_SEND. -->
+    <cache-path name="exports" path="exports/" />
+</paths>

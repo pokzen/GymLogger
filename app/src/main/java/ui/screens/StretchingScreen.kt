@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,22 +25,17 @@ import ca.bpmproperty.gymlogger.ui.components.AppCard
 import ca.bpmproperty.gymlogger.ui.components.AppDatePickerDialog
 import ca.bpmproperty.gymlogger.ui.components.DateChip
 import ca.bpmproperty.gymlogger.ui.components.PrimaryActionButton
+import ca.bpmproperty.gymlogger.ui.viewmodel.StretchLibraryViewModel
 import ca.bpmproperty.gymlogger.ui.viewmodel.StretchingViewModel
 import ca.bpmproperty.gymlogger.ui.viewmodel.workoutViewModel
-
-val defaultStretches = listOf(
-    "Hip Flexor Stretch", "Hamstring Stretch", "Quad Stretch",
-    "Chest Opener", "Shoulder Cross-Body", "Tricep Stretch",
-    "Pigeon Pose", "Child's Pose", "Cat-Cow",
-    "Spinal Twist", "Calf Stretch", "Neck Rolls"
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StretchingScreen(
     onBack: () -> Unit = {},
     initialDateKey: Int? = null,
-    editingSessionId: Int? = null
+    editingSessionId: Int? = null,
+    onManageLibrary: () -> Unit = {}
 ) {
     val viewModel: StretchingViewModel = workoutViewModel { StretchingViewModel(it) }
     val stretches = viewModel.stretches
@@ -79,6 +75,13 @@ fun StretchingScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onManageLibrary) {
+                        Icon(
+                            Icons.Filled.LibraryBooks,
+                            contentDescription = "Stretch library",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     PrimaryActionButton(
                         text = if (viewModel.isSaving) "Saving" else "Finish",
                         onClick = { viewModel.save(onDone = onBack) },
@@ -325,6 +328,9 @@ fun StretchPickerDialog(
     onDismiss: () -> Unit,
     onSelect: (String, String) -> Unit
 ) {
+    val libraryVM: StretchLibraryViewModel = workoutViewModel { StretchLibraryViewModel(it) }
+    val library by libraryVM.stretches.collectAsState()
+
     var customName by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf("30") }
 
@@ -350,29 +356,31 @@ fun StretchPickerDialog(
                 StyledTextField(
                     value = customName,
                     onValueChange = { customName = it },
-                    label = "CUSTOM NAME",
+                    label = "NAME",
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    "OR PICK ONE",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.height(200.dp)) {
-                    items(defaultStretches) { stretch ->
-                        TextButton(
-                            onClick = { onSelect(stretch, duration) },
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 12.dp, horizontal = 8.dp)
-                        ) {
-                            Text(
-                                text = stretch,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                if (library.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "OR PICK ONE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyColumn(modifier = Modifier.height(200.dp)) {
+                        items(library, key = { it.id }) { stretch ->
+                            TextButton(
+                                onClick = { onSelect(stretch.name, duration) },
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(vertical = 12.dp, horizontal = 8.dp)
+                            ) {
+                                Text(
+                                    text = stretch.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -380,11 +388,17 @@ fun StretchPickerDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { if (customName.isNotBlank()) onSelect(customName, duration) },
+                onClick = {
+                    if (customName.isNotBlank()) {
+                        // Auto-save to library (idempotent — case-insensitive duplicate is a no-op)
+                        libraryVM.addStretch(customName)
+                        onSelect(customName, duration)
+                    }
+                },
                 enabled = customName.isNotBlank()
             ) {
                 Text(
-                    "ADD CUSTOM",
+                    "ADD",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelLarge
                 )

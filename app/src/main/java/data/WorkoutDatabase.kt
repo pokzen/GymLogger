@@ -45,6 +45,18 @@ data class StretchingSession(
 )
 
 /**
+ * A reusable stretch name stored in the user's library.
+ * Library entries are user-managed: every stretch they add through the picker is
+ * saved here automatically, and they can edit or delete entries.
+ */
+@Entity(tableName = "stretch_library")
+data class LibraryStretch(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val name: String,
+    val displayOrder: Int = 0
+)
+
+/**
  * A reusable exercise name stored in the user's library.
  * Library entries are grouped by muscle group; the user can add, edit, delete any entry.
  * On first install the library is seeded with a starter set.
@@ -130,6 +142,27 @@ interface StretchingDao {
 }
 
 @Dao
+interface LibraryStretchDao {
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(stretch: LibraryStretch): Long
+
+    @Update
+    suspend fun update(stretch: LibraryStretch)
+
+    @Delete
+    suspend fun delete(stretch: LibraryStretch)
+
+    @Query("SELECT * FROM stretch_library ORDER BY displayOrder DESC, name ASC")
+    fun getAll(): Flow<List<LibraryStretch>>
+
+    @Query("SELECT * FROM stretch_library WHERE id = :id")
+    suspend fun getById(id: Int): LibraryStretch?
+
+    @Query("SELECT * FROM stretch_library WHERE name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun findByName(name: String): LibraryStretch?
+}
+
+@Dao
 interface LibraryExerciseDao {
     @Insert
     suspend fun insert(exercise: LibraryExercise): Long
@@ -179,9 +212,10 @@ interface WorkoutTemplateDao {
         CardioSession::class,
         StretchingSession::class,
         WorkoutTemplate::class,
-        LibraryExercise::class
+        LibraryExercise::class,
+        LibraryStretch::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class WorkoutDatabase : RoomDatabase() {
@@ -190,6 +224,7 @@ abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun stretchingDao(): StretchingDao
     abstract fun workoutTemplateDao(): WorkoutTemplateDao
     abstract fun libraryExerciseDao(): LibraryExerciseDao
+    abstract fun libraryStretchDao(): LibraryStretchDao
 
     companion object {
         @Volatile
