@@ -10,7 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -24,6 +24,7 @@ import ca.bpmproperty.gymlogger.data.CardioPhase
 import ca.bpmproperty.gymlogger.ui.components.AppCard
 import ca.bpmproperty.gymlogger.ui.components.AppDatePickerDialog
 import ca.bpmproperty.gymlogger.ui.components.DateChip
+import ca.bpmproperty.gymlogger.ui.components.DraftRestoredBanner
 import ca.bpmproperty.gymlogger.ui.components.PrimaryActionButton
 import ca.bpmproperty.gymlogger.ui.viewmodel.CardioType
 import ca.bpmproperty.gymlogger.ui.viewmodel.CardioViewModel
@@ -61,6 +62,7 @@ fun CardioScreen(
 ) {
     val viewModel: CardioViewModel = workoutViewModel { CardioViewModel(it) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showDiscardConfirm by remember { mutableStateOf(false) }
 
     // Phase editor state: -1 = closed, -2 = adding new, >=0 = editing index
     var phaseEditorIndex by remember { mutableStateOf(-1) }
@@ -74,6 +76,13 @@ fun CardioScreen(
     LaunchedEffect(initialDateKey) {
         if (editingSessionId == null && initialDateKey != null) {
             viewModel.selectedDateKey = initialDateKey
+        }
+    }
+
+    // Restore from draft on plain entry (no editing, no date prefill).
+    LaunchedEffect(Unit) {
+        if (editingSessionId == null && initialDateKey == null) {
+            viewModel.loadDraftIfAny()
         }
     }
 
@@ -91,7 +100,7 @@ fun CardioScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.Filled.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -121,6 +130,13 @@ fun CardioScreen(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            if (viewModel.wasRestoredFromDraft) {
+                DraftRestoredBanner(
+                    onDiscardRequest = { showDiscardConfirm = true },
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
             DateChip(
                 dateKey = viewModel.selectedDateKey,
                 onClick = { showDatePicker = true },
@@ -177,6 +193,28 @@ fun CardioScreen(
         )
     }
 
+    if (showDiscardConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirm = false },
+            title = { Text("Discard in-progress workout?") },
+            text = { Text("This will clear everything you've logged so far. The action can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.discardDraft()
+                    showDiscardConfirm = false
+                }) {
+                    Text("DISCARD", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirm = false }) {
+                    Text("CANCEL", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+
     viewModel.saveError?.let { error ->
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
@@ -192,22 +230,55 @@ fun CardioScreen(
     }
 }
 
+/**
+ * Collapsible type chip row. By default shows only the currently-selected type plus
+ * a small "change" link. Tapping the link reveals the full set of options. Picking
+ * one collapses back to the compact form.
+ *
+ * Treadmill is the 90% case, so this keeps the screen clean while leaving the others
+ * one tap away when needed.
+ */
 @Composable
 private fun CardioTypeChipRow(
     selected: CardioType,
     onSelect: (CardioType) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        CardioType.values().forEach { type ->
+    var expanded by remember { mutableStateOf(false) }
+
+    if (expanded) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CardioType.values().forEach { type ->
+                TypeChip(
+                    label = type.label,
+                    isSelected = type == selected,
+                    onClick = {
+                        onSelect(type)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             TypeChip(
-                label = type.label,
-                isSelected = type == selected,
-                onClick = { onSelect(type) }
+                label = selected.label,
+                isSelected = true,
+                onClick = { expanded = true }
+            )
+            Text(
+                text = "Change type",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.clickable { expanded = true }
             )
         }
     }

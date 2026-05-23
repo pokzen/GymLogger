@@ -1,20 +1,18 @@
 package ca.bpmproperty.gymlogger.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import ca.bpmproperty.gymlogger.data.LibraryExercise
 import ca.bpmproperty.gymlogger.ui.components.AppCard
@@ -46,7 +44,7 @@ fun ExerciseLibraryScreen(onBack: () -> Unit) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.Filled.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onSurface
                         )

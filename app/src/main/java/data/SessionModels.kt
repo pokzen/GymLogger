@@ -34,6 +34,34 @@ data class TemplateExercise(
     val prescribedReps: List<Int> = emptyList()
 )
 
+// ---- Session draft payloads (for in-progress workout persistence) ----
+
+/** Lifting session in-progress state. */
+@Serializable
+data class LiftingDraftPayload(
+    val exercises: List<ExerciseEntry> = emptyList(),
+    /** Keyed by exercise index in [exercises]; value is the prescribed rep list. */
+    val prescribedReps: Map<Int, List<Int>> = emptyMap()
+)
+
+/** Cardio session in-progress state. */
+@Serializable
+data class CardioDraftPayload(
+    val cardioType: String = "treadmill",
+    val duration: String = "",
+    val distance: String = "",
+    val calories: String = "",
+    val notes: String = "",
+    val phases: List<CardioPhase> = emptyList()
+)
+
+/** Stretching session in-progress state. */
+@Serializable
+data class StretchingDraftPayload(
+    val stretches: List<StretchEntry> = emptyList(),
+    val notes: String = ""
+)
+
 // ---- Cardio (treadmill phases) ----
 
 /**

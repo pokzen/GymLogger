@@ -45,6 +45,21 @@ data class StretchingSession(
 )
 
 /**
+ * In-progress session state, persisted so a workout survives the app being backgrounded
+ * or killed. One draft per session type; new sessions of the same type replace the
+ * previous draft. Drafts are cleared when the user taps Finish (real session is saved).
+ */
+@Entity(tableName = "session_drafts")
+data class SessionDraft(
+    /** "weights", "cardio", or "stretching" — also the primary key. */
+    @PrimaryKey val sessionType: String,
+    val dateKey: Int,
+    /** JSON-encoded type-specific payload. Shape depends on sessionType. */
+    val payloadJson: String,
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+/**
  * A reusable stretch name stored in the user's library.
  * Library entries are user-managed: every stretch they add through the picker is
  * saved here automatically, and they can edit or delete entries.
@@ -142,6 +157,18 @@ interface StretchingDao {
 }
 
 @Dao
+interface SessionDraftDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(draft: SessionDraft)
+
+    @Query("SELECT * FROM session_drafts WHERE sessionType = :type LIMIT 1")
+    suspend fun get(type: String): SessionDraft?
+
+    @Query("DELETE FROM session_drafts WHERE sessionType = :type")
+    suspend fun delete(type: String)
+}
+
+@Dao
 interface LibraryStretchDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(stretch: LibraryStretch): Long
@@ -213,9 +240,10 @@ interface WorkoutTemplateDao {
         StretchingSession::class,
         WorkoutTemplate::class,
         LibraryExercise::class,
-        LibraryStretch::class
+        LibraryStretch::class,
+        SessionDraft::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class WorkoutDatabase : RoomDatabase() {
@@ -225,6 +253,7 @@ abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun workoutTemplateDao(): WorkoutTemplateDao
     abstract fun libraryExerciseDao(): LibraryExerciseDao
     abstract fun libraryStretchDao(): LibraryStretchDao
+    abstract fun sessionDraftDao(): SessionDraftDao
 
     companion object {
         @Volatile

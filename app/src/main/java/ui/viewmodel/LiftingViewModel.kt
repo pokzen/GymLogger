@@ -8,7 +8,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ca.bpmproperty.gymlogger.data.ExerciseEntry
+import ca.bpmproperty.gymlogger.data.LiftingDraftPayload
 import ca.bpmproperty.gymlogger.data.LiftingSession
+import ca.bpmproperty.gymlogger.data.SessionDraft
 import ca.bpmproperty.gymlogger.data.SetEntry
 import ca.bpmproperty.gymlogger.data.TemplateExercise
 import ca.bpmproperty.gymlogger.data.WorkoutRepository
@@ -47,6 +49,16 @@ class LiftingViewModel(
     private var editingSessionId: Int? = null
     private var editingLoaded = false
 
+    /** True once we've attempted to load a draft on init (so we don't try repeatedly). */
+    private var draftChecked = false
+
+    /**
+     * True for the brief window after we restored a draft but before the user has made
+     * any changes. The banner uses this to ask "discard?". Any mutation flips it false.
+     */
+    var wasRestoredFromDraft by mutableStateOf(false)
+        private set
+
     var isSaving by mutableStateOf(false)
         private set
     var saveError by mutableStateOf<String?>(null)
@@ -54,6 +66,75 @@ class LiftingViewModel(
 
     fun addExercise(name: String, muscleGroup: String = "") {
         exercises.add(ExerciseEntry(name = name, sets = emptyList(), muscleGroup = muscleGroup))
+        wasRestoredFromDraft = false
+        persistDraft()
+    }
+
+    /**
+     * Restore an in-progress lifting session from the draft table. Called once from
+     * the screen on first composition when NOT in edit mode. If no draft exists, no-op.
+     */
+    fun loadDraftIfAny() {
+        if (draftChecked || editingSessionId != null) return
+        draftChecked = true
+        viewModelScope.launch {
+            val draft = repository.getDraft(DRAFT_TYPE) ?: return@launch
+            val payload: LiftingDraftPayload = try {
+                Json.decodeFromString(draft.payloadJson)
+            } catch (_: Throwable) {
+                return@launch
+            }
+            exercises.clear()
+            exercises.addAll(payload.exercises)
+            prescribedReps.clear()
+            prescribedReps.putAll(payload.prescribedReps)
+            selectedDateKey = draft.dateKey
+            // Only show the banner if the restored draft actually had content.
+            if (payload.exercises.isNotEmpty()) {
+                wasRestoredFromDraft = true
+            }
+        }
+    }
+
+    /** Wipe the in-progress workout and the persisted draft row. */
+    fun discardDraft() {
+        exercises.clear()
+        prescribedReps.clear()
+        selectedDateKey = todayDateKey()
+        wasRestoredFromDraft = false
+        viewModelScope.launch {
+            clearDraft()
+        }
+    }
+
+    /**
+     * Snapshot current state to the draft table. Fire-and-forget; runs on the
+     * ViewModel's coroutine scope. Skipped in edit mode (we don't draft over existing sessions).
+     */
+    private fun persistDraft() {
+        if (editingSessionId != null) return
+        viewModelScope.launch {
+            val payload = LiftingDraftPayload(
+                exercises = exercises.toList(),
+                prescribedReps = prescribedReps.toMap()
+            )
+            val json = Json.encodeToString(payload)
+            repository.upsertDraft(
+                SessionDraft(
+                    sessionType = DRAFT_TYPE,
+                    dateKey = selectedDateKey,
+                    payloadJson = json
+                )
+            )
+        }
+    }
+
+    private suspend fun clearDraft() {
+        repository.deleteDraft(DRAFT_TYPE)
+    }
+
+    companion object {
+        private const val DRAFT_TYPE = "weights"
     }
 
     /**
@@ -85,6 +166,7 @@ class LiftingViewModel(
                     prescribedReps[index] = te.prescribedReps
                 }
             }
+            persistDraft()
         }
     }
 
@@ -150,6 +232,8 @@ class LiftingViewModel(
             sets = exercises[index].sets + SetEntry(reps, weight)
         )
         exercises[index] = updated
+        wasRestoredFromDraft = false
+        persistDraft()
     }
 
     /** Replace a specific set within an exercise. No-op if either index is invalid. */
@@ -161,6 +245,8 @@ class LiftingViewModel(
             it[setIndex] = SetEntry(reps, weight)
         }
         exercises[exerciseIndex] = ex.copy(sets = newSets)
+        wasRestoredFromDraft = false
+        persistDraft()
     }
 
     /** Remove a specific set within an exercise. No-op if either index is invalid. */
@@ -170,6 +256,8 @@ class LiftingViewModel(
         if (setIndex !in ex.sets.indices) return
         val newSets = ex.sets.toMutableList().also { it.removeAt(setIndex) }
         exercises[exerciseIndex] = ex.copy(sets = newSets)
+        wasRestoredFromDraft = false
+        persistDraft()
     }
 
     fun removeExercise(index: Int) {
@@ -181,6 +269,8 @@ class LiftingViewModel(
             .mapKeys { (k, _) -> if (k > index) k - 1 else k }
         prescribedReps.clear()
         prescribedReps.putAll(newMap)
+        wasRestoredFromDraft = false
+        persistDraft()
     }
 
     /** Persist the current session. Calls [onDone] when the database write completes. */
@@ -208,6 +298,8 @@ class LiftingViewModel(
                         )
                     )
                 }
+                // Workout is saved for real; clear the in-progress draft.
+                clearDraft()
                 onDone()
             } catch (t: Throwable) {
                 saveError = t.message ?: "Failed to save session"

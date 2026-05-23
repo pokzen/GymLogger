@@ -45,6 +45,11 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     suspend fun updateLibraryStretch(stretch: LibraryStretch) = db.libraryStretchDao().update(stretch)
     suspend fun deleteLibraryStretch(stretch: LibraryStretch) = db.libraryStretchDao().delete(stretch)
 
+    // Session Drafts (in-progress session persistence)
+    suspend fun getDraft(type: String): SessionDraft? = db.sessionDraftDao().get(type)
+    suspend fun upsertDraft(draft: SessionDraft) = db.sessionDraftDao().upsert(draft)
+    suspend fun deleteDraft(type: String) = db.sessionDraftDao().delete(type)
+
     /**
      * Insert a stretch into the library if a matching name doesn't already exist.
      * Case-insensitive match. Returns true if inserted, false if a duplicate was found.

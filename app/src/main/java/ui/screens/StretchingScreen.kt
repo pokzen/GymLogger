@@ -8,8 +8,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Edit
@@ -24,6 +24,7 @@ import ca.bpmproperty.gymlogger.data.StretchEntry
 import ca.bpmproperty.gymlogger.ui.components.AppCard
 import ca.bpmproperty.gymlogger.ui.components.AppDatePickerDialog
 import ca.bpmproperty.gymlogger.ui.components.DateChip
+import ca.bpmproperty.gymlogger.ui.components.DraftRestoredBanner
 import ca.bpmproperty.gymlogger.ui.components.PrimaryActionButton
 import ca.bpmproperty.gymlogger.ui.viewmodel.StretchLibraryViewModel
 import ca.bpmproperty.gymlogger.ui.viewmodel.StretchingViewModel
@@ -41,6 +42,7 @@ fun StretchingScreen(
     val stretches = viewModel.stretches
     var showStretchPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showDiscardConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(editingSessionId) {
         if (editingSessionId != null && editingSessionId > 0) {
@@ -51,6 +53,13 @@ fun StretchingScreen(
     LaunchedEffect(initialDateKey) {
         if (editingSessionId == null && initialDateKey != null) {
             viewModel.selectedDateKey = initialDateKey
+        }
+    }
+
+    // Restore from draft on plain entry (no editing, no date prefill).
+    LaunchedEffect(Unit) {
+        if (editingSessionId == null && initialDateKey == null) {
+            viewModel.loadDraftIfAny()
         }
     }
 
@@ -68,7 +77,7 @@ fun StretchingScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.Filled.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -110,6 +119,13 @@ fun StretchingScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            if (viewModel.wasRestoredFromDraft) {
+                DraftRestoredBanner(
+                    onDiscardRequest = { showDiscardConfirm = true },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+            }
+
             DateChip(
                 dateKey = viewModel.selectedDateKey,
                 onClick = { showDatePicker = true },
@@ -178,6 +194,28 @@ fun StretchingScreen(
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false }
+        )
+    }
+
+    if (showDiscardConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirm = false },
+            title = { Text("Discard in-progress session?") },
+            text = { Text("This will clear everything you've logged so far. The action can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.discardDraft()
+                    showDiscardConfirm = false
+                }) {
+                    Text("DISCARD", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirm = false }) {
+                    Text("CANCEL", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 

@@ -227,3 +227,41 @@ fun PrimaryActionButton(
         )
     }
 }
+
+/**
+ * Banner shown at the top of a session screen when the ViewModel restored an
+ * in-progress draft. Offers a "Discard" link that fires [onDiscardRequest] — the
+ * caller is expected to show a confirmation dialog before actually clearing.
+ *
+ * Subtle yellow-tinted strip so it stands out without screaming. Auto-disappears
+ * (via the caller's `visible` flag) once the user makes any change.
+ */
+@Composable
+fun DraftRestoredBanner(
+    onDiscardRequest: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(10.dp)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.primary, shape)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Resumed from your last session",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = "DISCARD",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable(onClick = onDiscardRequest)
+        )
+    }
+}

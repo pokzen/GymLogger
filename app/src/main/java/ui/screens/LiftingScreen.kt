@@ -9,8 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -19,17 +19,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ca.bpmproperty.gymlogger.data.ExerciseEntry
 import ca.bpmproperty.gymlogger.data.SetEntry
 import ca.bpmproperty.gymlogger.ui.components.AppCard
 import ca.bpmproperty.gymlogger.ui.components.AppDatePickerDialog
 import ca.bpmproperty.gymlogger.ui.components.DateChip
+import ca.bpmproperty.gymlogger.ui.components.DraftRestoredBanner
 import ca.bpmproperty.gymlogger.ui.components.ExercisePicker
 import ca.bpmproperty.gymlogger.ui.components.PrimaryActionButton
 import ca.bpmproperty.gymlogger.ui.viewmodel.LiftingViewModel
@@ -47,6 +46,7 @@ fun LiftingScreen(
     val exercises = viewModel.exercises
     var showExercisePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showDiscardConfirm by remember { mutableStateOf(false) }
 
     // If we're editing an existing session, load it. Skip template + date prefill in that case.
     LaunchedEffect(editingSessionId) {
@@ -69,6 +69,14 @@ fun LiftingScreen(
         }
     }
 
+    // Restore from draft when this is a plain-entry session (no template, date prefill,
+    // or edit target). Lets the user pick up an interrupted workout where they left off.
+    LaunchedEffect(Unit) {
+        if (editingSessionId == null && initialTemplateId == null && initialDateKey == null) {
+            viewModel.loadDraftIfAny()
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -83,7 +91,7 @@ fun LiftingScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.Filled.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -125,6 +133,13 @@ fun LiftingScreen(
                     completed = viewModel.completedPrescribedSets,
                     total = viewModel.totalPrescribedSets,
                     percent = pct,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+            }
+
+            if (viewModel.wasRestoredFromDraft) {
+                DraftRestoredBanner(
+                    onDiscardRequest = { showDiscardConfirm = true },
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
                 )
             }
@@ -208,6 +223,28 @@ fun LiftingScreen(
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false }
+        )
+    }
+
+    if (showDiscardConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirm = false },
+            title = { Text("Discard in-progress workout?") },
+            text = { Text("This will clear everything you've logged so far. The action can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.discardDraft()
+                    showDiscardConfirm = false
+                }) {
+                    Text("DISCARD", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirm = false }) {
+                    Text("CANCEL", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
