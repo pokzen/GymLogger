@@ -64,6 +64,7 @@ import ca.sb.gymlogger.ui.screens.TemplatePickerScreen
 import ca.sb.gymlogger.ui.screens.TimerPopoutScreen
 import ca.sb.gymlogger.ui.screens.TimerScreen
 import ca.sb.gymlogger.ui.screens.WorkoutCalendarPopout
+import ca.sb.gymlogger.ui.viewmodel.rememberAppPreferences
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,6 +83,7 @@ fun MainApp() {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val prefs = rememberAppPreferences()
 
     val items = listOf(
         BottomNavItem("log", "Log", Icons.Filled.FitnessCenter),
@@ -103,6 +105,7 @@ fun MainApp() {
         drawerState = drawerState,
         drawerContent = {
             AppDrawerContent(
+                logName = prefs.logName,
                 onNavigate = { route ->
                     closeDrawer()
                     // Tab routes (log/history/summary/timer) switch tabs; everything else pushes.
@@ -371,6 +374,7 @@ fun MainApp() {
 
 @Composable
 private fun AppDrawerContent(
+    logName: String,
     onNavigate: (route: String) -> Unit
 ) {
     ModalDrawerSheet(
@@ -378,7 +382,7 @@ private fun AppDrawerContent(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "SHANE'S LOG",
+                text = logName.uppercase(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 12.dp, bottom = 20.dp, top = 8.dp)

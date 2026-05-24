@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import ca.sb.gymlogger.data.AppPreferences
 import ca.sb.gymlogger.data.GymLoggerApplication
 import ca.sb.gymlogger.data.WorkoutRepository
 
@@ -25,4 +26,31 @@ inline fun <reified VM : ViewModel> workoutViewModel(
         initializer { create(app.repository) }
     }
     return viewModel(factory = factory)
+}
+
+/**
+ * Variant of [workoutViewModel] that also passes [AppPreferences] to the factory.
+ * Use for VMs that need to read or write user preferences.
+ */
+@Composable
+inline fun <reified VM : ViewModel> workoutViewModelWithPrefs(
+    crossinline create: (WorkoutRepository, AppPreferences) -> VM
+): VM {
+    val context = LocalContext.current
+    val app = context.applicationContext as GymLoggerApplication
+    val factory = viewModelFactory {
+        initializer { create(app.repository, app.preferences) }
+    }
+    return viewModel(factory = factory)
+}
+
+/**
+ * Compose helper: read the app's [AppPreferences] directly from a non-VM composable.
+ * Values are re-read on every recomposition, so navigating back from Settings will
+ * pick up changes automatically.
+ */
+@Composable
+fun rememberAppPreferences(): AppPreferences {
+    val context = LocalContext.current
+    return (context.applicationContext as GymLoggerApplication).preferences
 }

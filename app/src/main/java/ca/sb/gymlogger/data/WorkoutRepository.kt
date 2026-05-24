@@ -57,6 +57,37 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     suspend fun deleteQuickLog(dateKey: Int) = db.quickLogDao().deleteByDateKey(dateKey)
 
     /**
+     * Wipes all session-style data: lifting, cardio, stretching, and quick-logs.
+     * Templates, library entries, and in-progress drafts are NOT touched — they're
+     * not part of the export/import payload and persist across imports.
+     */
+    suspend fun wipeAllSessions() {
+        db.liftingDao().deleteAll()
+        db.cardioDao().deleteAll()
+        db.stretchingDao().deleteAll()
+        db.quickLogDao().deleteAll()
+    }
+
+    /**
+     * Nuclear reset. Wipes everything in the database — sessions, quick-logs,
+     * templates, library entries, in-progress drafts — then re-seeds the default
+     * exercise library so the app isn't completely empty. Used by Settings → Erase
+     * all data.
+     */
+    suspend fun wipeAllData() {
+        db.liftingDao().deleteAll()
+        db.cardioDao().deleteAll()
+        db.stretchingDao().deleteAll()
+        db.quickLogDao().deleteAll()
+        db.workoutTemplateDao().deleteAll()
+        db.libraryStretchDao().deleteAll()
+        db.libraryExerciseDao().deleteAll()
+        db.sessionDraftDao().deleteAll()
+        // Re-seed the default library so first lifting log isn't a blank slate.
+        seedLibraryIfEmpty()
+    }
+
+    /**
      * Insert a stretch into the library if a matching name doesn't already exist.
      * Case-insensitive match. Returns true if inserted, false if a duplicate was found.
      */

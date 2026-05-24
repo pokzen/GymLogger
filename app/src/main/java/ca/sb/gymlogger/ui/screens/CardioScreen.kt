@@ -28,7 +28,7 @@ import ca.sb.gymlogger.ui.components.DraftRestoredBanner
 import ca.sb.gymlogger.ui.components.PrimaryActionButton
 import ca.sb.gymlogger.ui.viewmodel.CardioType
 import ca.sb.gymlogger.ui.viewmodel.CardioViewModel
-import ca.sb.gymlogger.ui.viewmodel.workoutViewModel
+import ca.sb.gymlogger.ui.viewmodel.workoutViewModelWithPrefs
 
 /**
  * A suggestion chip for the phase editor. Tapping it fills the label and,
@@ -60,7 +60,7 @@ fun CardioScreen(
     initialDateKey: Int? = null,
     editingSessionId: Int? = null
 ) {
-    val viewModel: CardioViewModel = workoutViewModel { CardioViewModel(it) }
+    val viewModel: CardioViewModel = workoutViewModelWithPrefs { repo, prefs -> CardioViewModel(repo, prefs) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showDiscardConfirm by remember { mutableStateOf(false) }
 

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ca.sb.gymlogger.data.AppPreferences
 import ca.sb.gymlogger.data.CardioDraftPayload
 import ca.sb.gymlogger.data.CardioPhase
 import ca.sb.gymlogger.data.CardioSession
@@ -25,12 +26,18 @@ enum class CardioType(val storageValue: String, val label: String) {
 }
 
 class CardioViewModel(
-    private val repository: WorkoutRepository
+    private val repository: WorkoutRepository,
+    private val preferences: AppPreferences
 ) : ViewModel() {
+
+    /** Resolve the user's preferred default cardio type, or fall back to treadmill. */
+    private fun defaultCardio(): CardioType =
+        CardioType.values().firstOrNull { it.storageValue == preferences.defaultCardioType }
+            ?: CardioType.TREADMILL
 
     // Backed properties: every external write auto-persists to the draft table.
 
-    private var _cardioType by mutableStateOf(CardioType.TREADMILL)
+    private var _cardioType by mutableStateOf(defaultCardio())
     var cardioType: CardioType
         get() = _cardioType
         set(value) { _cardioType = value; wasRestoredFromDraft = false; persistDraft() }
@@ -132,7 +139,7 @@ class CardioViewModel(
 
     /** Wipe the in-progress cardio session and the persisted draft row. */
     fun discardDraft() {
-        _cardioType = CardioType.TREADMILL
+        _cardioType = defaultCardio()
         _duration = ""
         _distance = ""
         _calories = ""

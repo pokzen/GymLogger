@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 class GymLoggerApplication : Application() {
     val database by lazy { WorkoutDatabase.getDatabase(this) }
     val repository by lazy { WorkoutRepository(database) }
+    val preferences by lazy { AppPreferences(this) }
 
     /** Application-scoped timer — survives navigation between screens. Built lazily so
      *  the Context is available for foreground-service bridging. */

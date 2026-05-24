@@ -131,6 +131,9 @@ interface LiftingDao {
 
     @Query("SELECT * FROM lifting_sessions ORDER BY date DESC")
     fun getAll(): Flow<List<LiftingSession>>
+
+    @Query("DELETE FROM lifting_sessions")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -149,6 +152,9 @@ interface CardioDao {
 
     @Query("SELECT * FROM cardio_sessions ORDER BY date DESC")
     fun getAll(): Flow<List<CardioSession>>
+
+    @Query("DELETE FROM cardio_sessions")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -167,6 +173,9 @@ interface StretchingDao {
 
     @Query("SELECT * FROM stretching_sessions ORDER BY date DESC")
     fun getAll(): Flow<List<StretchingSession>>
+
+    @Query("DELETE FROM stretching_sessions")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -185,6 +194,9 @@ interface QuickLogDao {
 
     @Query("SELECT * FROM quick_logs WHERE dateKey = :dateKey LIMIT 1")
     suspend fun getByDateKey(dateKey: Int): QuickLog?
+
+    @Query("DELETE FROM quick_logs")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -197,6 +209,9 @@ interface SessionDraftDao {
 
     @Query("DELETE FROM session_drafts WHERE sessionType = :type")
     suspend fun delete(type: String)
+
+    @Query("DELETE FROM session_drafts")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -218,6 +233,9 @@ interface LibraryStretchDao {
 
     @Query("SELECT * FROM stretch_library WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): LibraryStretch?
+
+    @Query("DELETE FROM stretch_library")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -242,6 +260,9 @@ interface LibraryExerciseDao {
 
     @Query("SELECT COUNT(*) FROM exercise_library")
     suspend fun count(): Int
+
+    @Query("DELETE FROM exercise_library")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -260,6 +281,9 @@ interface WorkoutTemplateDao {
 
     @Query("SELECT * FROM workout_templates WHERE id = :id")
     suspend fun getById(id: Int): WorkoutTemplate?
+
+    @Query("DELETE FROM workout_templates")
+    suspend fun deleteAll()
 }
 
 // ---- Database ----

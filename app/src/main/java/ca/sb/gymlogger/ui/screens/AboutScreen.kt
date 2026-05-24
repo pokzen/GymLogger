@@ -9,10 +9,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ca.sb.gymlogger.BuildConfig
+import ca.sb.gymlogger.ui.viewmodel.rememberAppPreferences
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
+    val prefs = rememberAppPreferences()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -55,13 +58,13 @@ fun AboutScreen(onBack: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Shane's Log",
+                text = prefs.logName,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Version 1.0",
+                text = "Version ${BuildConfig.VERSION_NAME}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

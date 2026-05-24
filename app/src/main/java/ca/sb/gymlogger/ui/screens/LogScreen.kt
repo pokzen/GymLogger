@@ -24,6 +24,7 @@ import ca.sb.gymlogger.ui.components.LogOnDateSheet
 import ca.sb.gymlogger.ui.components.WorkoutType
 import ca.sb.gymlogger.ui.components.WorkoutWeekStrip
 import ca.sb.gymlogger.ui.viewmodel.CalendarViewModel
+import ca.sb.gymlogger.ui.viewmodel.rememberAppPreferences
 import ca.sb.gymlogger.ui.viewmodel.workoutViewModel
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.IconButton
@@ -35,6 +36,7 @@ fun LogScreen(
 ) {
     val calendarVM: CalendarViewModel = workoutViewModel { CalendarViewModel(it) }
     val calData by calendarVM.data.collectAsState()
+    val prefs = rememberAppPreferences()
 
     var sheetForDate by remember { mutableStateOf<Int?>(null) }
     var quickMarkConfirmDate by remember { mutableStateOf<Int?>(null) }
@@ -64,14 +66,14 @@ fun LogScreen(
             }
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = "SHANE'S LOG",
+                text = prefs.logName.uppercase(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(end = 4.dp, bottom = 12.dp)
             )
         }
         Text(
-            text = "What's today?",
+            text = prefs.greeting,
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 36.dp)
