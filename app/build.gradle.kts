@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 android {
-    namespace = "ca.bpmproperty.gymlogger"
+    namespace = "ca.sb.gymlogger"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -13,7 +13,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "ca.bpmproperty.gymlogger"
+        applicationId = "ca.sb.gymlogger"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
