@@ -242,9 +242,11 @@ fun SummaryScreen(onOpenDrawer: () -> Unit = {}) {
                 Spacer(modifier = Modifier.height(12.dp))
                 FilledTonalButton(
                     onClick = {
-                        // Launch the system file picker. "application/json" is a hint —
-                        // some pickers also let users see all files, which is fine.
-                        filePickerLauncher.launch("application/json")
+                        // Launch the system file picker. We accept any file ("*/*") because
+                        // file managers register .json files inconsistently — some as
+                        // application/json, some as text/plain, some as */*. The importer
+                        // validates the actual JSON content and fails cleanly on bad input.
+                        filePickerLauncher.launch("*/*")
                     },
                     enabled = !importVM.isImporting,
                     modifier = Modifier.fillMaxWidth(),
