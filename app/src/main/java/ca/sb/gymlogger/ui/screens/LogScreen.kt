@@ -48,7 +48,7 @@ fun LogScreen(
             .padding(horizontal = 20.dp)
             .padding(top = 8.dp, bottom = 24.dp)
     ) {
-        // Header row: hamburger menu on the left, "SHANE'S LOG" on the right.
+        // Header row: hamburger menu on the left, the user's log name (eyebrow) on the right.
         // Bottom-align so the text's baseline sits flush with the bottom of the
         // hamburger glyph.
         Row(

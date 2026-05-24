@@ -171,7 +171,7 @@ fun SummaryScreen(onOpenDrawer: () -> Unit = {}) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Builds a JSON file (for Claude review) and a Markdown summary, " +
+                    text = "Builds a JSON file (for backup or import elsewhere) and a Markdown summary, " +
                         "then opens the share sheet — send to Gmail, Drive, etc.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
